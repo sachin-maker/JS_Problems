@@ -554,3 +554,200 @@ executeTasksSequentiallyRecursive(tasks).then(({ results, errors }) => {
 * #### Chains .then() and .catch() to handle outcomes, then recurses with the next index.
 * #### Returns a promise that resolves with the final { results, errors }.
 
+---  
+
+## 🚀Compose and Pipe
+* ### Compose => it is a higher order function which take multiple function as a arguments and executed them one by one from right to left
+* ### pipe=> it is a higher order function which take multiple function as a arguments and executed them one by one from left to right
+
+#### Both the functions work like The output of one function becomes the input to the next function and so on.
+
+```js
+// Pipe: Executes functions from LEFT to RIGHT
+const pipe = (...fns) => {
+  return function (x) {
+    // Apply each function from left to right using reduce
+    return fns.reduce((value, func) => func(value), x);
+  };
+};
+
+// Compose: Executes functions from RIGHT to LEFT
+const compose = (...fns) => {
+  return function (x) {
+    // Apply each function from right to left using reduceRight
+    return fns.reduceRight((value, func) => func(value), x);
+  };
+};
+
+const add5 = (x) => x + 5;
+const multiply2 = (x) => x * 2;
+const subtract3 = (x) => x - 3;
+const toString = (x) => `${x}`; // Converts a number to a string
+
+console.log("Pipe");
+
+// pipe(add5, multiply2, subtract3)(10)
+// Step-by-step: 
+// add5(10) => 15
+// multiply2(15) => 30
+// subtract3(30) => 27
+const result1 = pipe(add5, multiply2, subtract3)(10);
+console.log(result1); // 27
+
+// pipe(toString, add5)(5)
+// Step-by-step:
+// toString(5) => "5"
+// add5("5") => "55" (JS will coerce and concatenate string + number)
+const result2 = pipe(toString, add5)(5);
+console.log(result2); // "55"
+
+console.log("Compose");
+
+// compose(add5, multiply2, subtract3)(10)
+// Step-by-step:
+// subtract3(10) => 7
+// multiply2(7) => 14
+// add5(14) => 19
+const result3 = compose(add5, multiply2, subtract3)(10);
+console.log(result3); // 19
+
+// compose(toString, add5)(5)
+// Step-by-step:
+// add5(5) => 10
+// toString(10) => "10"
+const result4 = compose(toString, add5)(5);
+console.log(result4); // "10"
+```
+## Output
+```js
+Pipe
+27
+55
+Compose
+19
+10
+```
+---  
+
+## 🚀Interview Question
+#### Explain how prototypal inheritance works in JavaScript and how a child inherits properties from a parent using prototype
+```js
+// This can be easily done using a class-based but to judge your prototype 
+// knowledge such questions can come.
+//parent function
+function Person(name) {
+ this.name = name;
+}
+Person.prototype.hello = function() {
+ return `Hello ${this.name}`;
+};
+//child function
+function Developer(name, title) {
+ Person.call(this, name);
+ this.title = title;
+}
+// Override person prototype in Developer's prototype
+Developer.prototype = Object.create(Person.prototype);
+// Reset the constructor property of Developer's prototype
+Developer.prototype.constructor = Developer;
+// Now you can add any methods in developer prototype 
+Developer.prototype.getTitle = function() {
+ return this.title;
+};
+const obj = new Developer("Alice", "Software Engineer");
+console.log(obj.hello()); // Output: Hello Alice
+console.log(obj.getTitle()); // Output: Software Engineer
+```
+#### Learn more here about - https://www.youtube.com/watch?v=CpmE5twq1h0
+#### https://youtu.be/wstwjQ1yqWQ?si=gXOhIy4v_9NELs-j
+
+---  
+
+## 🚀 Event emitter
+#### How does the EventEmitter class handle multiple event subscriptions and allow unsubscribing from individual events?
+
+```js
+class EventEmitter {
+  constructor() {
+    // A Map to store event names and their corresponding callback maps
+    this._eventSubscriptions = new Map();
+  }
+
+  // ✅ Subscribe to an event
+  subscribe(eventName, callback) {
+    // Ensure the callback is a function
+    if (typeof callback !== "function") {
+      throw new TypeError("Callback should be a function");
+    }
+
+    // If the event doesn't exist yet, initialize it with a new Map
+    if (!this._eventSubscriptions.has(eventName)) {
+      this._eventSubscriptions.set(eventName, new Map());
+    }
+
+    // Create a unique subscription ID using Symbol
+    const subscriptionId = Symbol();
+    const subscriptions = this._eventSubscriptions.get(eventName);
+
+    // Save the callback with the unique ID
+    subscriptions.set(subscriptionId, callback);
+
+    // Return an object that lets you remove the subscription later
+    return {
+      remove: () => {
+        if (!subscriptions.has(subscriptionId)) {
+          throw new Error("Subscription has already been removed");
+        }
+        subscriptions.delete(subscriptionId);
+      }
+    };
+  }
+
+  // ✅ Emit an event
+  emit(eventName, ...args) {
+    const subscriptions = this._eventSubscriptions.get(eventName);
+
+    // Throw an error if no one is listening to this event
+    if (!subscriptions) {
+      throw new Error("No event found");
+    }
+
+    // Call each subscribed callback with the passed arguments
+    subscriptions.forEach(callback => callback(...args));
+  }
+}
+```
+## 🧪 Example Usage:
+```js
+const emitter = new EventEmitter();
+
+// Subscribe to "greet" event
+const sub1 = emitter.subscribe("greet", (name) => {
+  console.log(`Hello, ${name}!`);
+});
+
+// Subscribe to "greet" again
+const sub2 = emitter.subscribe("greet", (name) => {
+  console.log(`Nice to meet you, ${name}.`);
+});
+
+// Emit the "greet" event
+emitter.emit("greet", "Alice");
+
+// Output:
+// Hello, Alice!
+// Nice to meet you, Alice.
+
+// Remove one subscription
+sub1.remove();
+
+// Emit again
+emitter.emit("greet", "Bob");
+
+// Output:
+// Nice to meet you, Bob.
+```
+
+
+
+
