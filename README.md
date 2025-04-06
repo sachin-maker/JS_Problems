@@ -748,6 +748,87 @@ emitter.emit("greet", "Bob");
 // Nice to meet you, Bob.
 ```
 
+---  
+
+## Find the matching element in the DOM
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Find matching element</title>
+</head>
+<body>
+  <!-- Container 1 with two spans -->
+  <div id="container1">
+    <div>
+      <div>
+        <span id="span-id">Test1</span>
+        <span id="span-id-2">Test2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container 2 with only one span -->
+  <div id="container2">
+    <div>
+      <div>
+        <span>Test2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Linking external script -->
+  <script src="./script.js"></script>
+</body>
+</html>
+```
+```js
+// Function to find the element in container2 that is in the same position
+// as the targetElement in container1
+const findMatchingElement = (container1, container2, targetElement) => {
+  // Base case: if container1 is exactly the targetElement, return container2
+  if (container1 === targetElement) return container2;
+
+  // Get direct children of both containers as arrays
+  const children1 = Array.from(container1.children);
+  const children2 = Array.from(container2.children);
+
+  // Traverse the children in parallel
+  for (let i = 0; i < children1.length; i++) {
+    // Ensure both containers have a child at this index
+    if (children1[i] && children2[i]) {
+      // Recursive call to dive deeper into both DOM trees
+      const result = findMatchingElement(
+        children1[i],
+        children2[i],
+        targetElement
+      );
+
+      // If a match was found, return it
+      if (result) return result;
+    }
+  }
+
+  // No match found at this level or below
+  return null;
+};
+
+// ✅ Case 1: Target element exists in both containers
+const positiveResult = findMatchingElement(
+  document.getElementById("container1"),
+  document.getElementById("container2"),
+  document.getElementById("span-id")
+);
+console.log("Positive Result:", positiveResult?.textContent); // Output: "Test2"
+
+// ❌ Case 2: Target element does not exist in container2
+const negativeResult = findMatchingElement(
+  document.getElementById("container1"),
+  document.getElementById("container2"),
+  document.getElementById("span-id-2")
+);
+console.log("Negative Result:", negativeResult); // Output: null
+```
 
 
 
