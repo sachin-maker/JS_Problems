@@ -750,7 +750,7 @@ emitter.emit("greet", "Bob");
 
 ---  
 
-## Find the matching element in the DOM
+## 🚀Find the matching element in the DOM
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -829,6 +829,202 @@ const negativeResult = findMatchingElement(
 );
 console.log("Negative Result:", negativeResult); // Output: null
 ```
+---  
+## Flatten Object
+#### Write a function flattenObject that takes a nested object and converts it into a flat object,where keys represent the path to each value in the original object.
+#### The function should handle nested objects, arrays, and primitive types and null
 
+##### Let’s create a flattenObject function that converts a nested object into a flat object, where the keys represent the full path to each value using dot notation (for objects) and bracket notation (for arrays). The function will handle nested objects, arrays, primitive types, and null.
+
+### Requirements
+* ##### For nested objects, use dot notation (e.g., parent.child).
+* ##### For arrays, use bracket notation (e.g., array[0]).
+* ##### Preserve primitive values (strings, numbers, booleans), null, and handle nested structures recursively.
+
+```js
+function flattenObject(obj, prefix = '', result = {}) {
+  // Base case: if obj is null or not an object/array, assign it directly
+  if (obj === null || (typeof obj !== 'object' && !Array.isArray(obj))) {
+    result[prefix] = obj;
+    return result;
+  }
+
+  // Handle objects and arrays
+  if (Array.isArray(obj)) {
+    // Iterate over array elements
+    for (let i = 0; i < obj.length; i++) {
+      const newPrefix = `${prefix}[${i}]`;
+      flattenObject(obj[i], newPrefix, result);
+    }
+  } else {
+    // Iterate over object properties
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        // Build the new key with dot notation
+        const newPrefix = prefix ? `${prefix}.${key}` : key;
+        flattenObject(obj[key], newPrefix, result);
+      }
+    }
+  }
+
+  return result;
+}
+
+// Test cases
+const nestedObj = {
+  a: 1,
+  b: {
+    c: 2,
+    d: {
+      e: 3
+    }
+  },
+  f: [4, { g: 5 }, null],
+  h: null
+};
+
+const flat = flattenObject(nestedObj);
+console.log(flat);
+
+/* Expected Output:
+{
+  "a": 1,
+  "b.c": 2,
+  "b.d.e": 3,
+  "f[0]": 4,
+  "f[1].g": 5,
+  "f[2]": null,
+  "h": null
+}
+*/
+
+// More test cases
+console.log(flattenObject({})); // {}
+console.log(flattenObject({ x: [1, 2, 3] })); // { "x[0]": 1, "x[1]": 2, "x[2]": 3 }
+console.log(flattenObject({ y: { z: [null, "test"] } })); // { "y.z[0]": null, "y.z[1]": "test" }
+```
+### Parameters:
+* obj: The input object to flatten.
+* prefix: Tracks the current path (starts empty, builds as we recurse).
+* result: The flat object being constructed (passed through recursion).
+
+---  
+
+## 🚀Attach event on push element in an array ?
+```js
+// Store the original push method
+const originalPush = Array.prototype.push;
+
+// Override the push method
+Array.prototype.push = function (...args) {
+  const result = originalPush.apply(this, args); // Call original push
+  if (this.onPush) {
+    this.onPush(args); // Trigger callback if it exists
+  }
+  return result; // Return the new length (standard push behavior)
+};
+
+// Method to set the callback
+Array.prototype.setPushCb = function (callback) {
+  if (typeof callback === 'function') {
+    this.onPush = callback; // Attach callback to the array instance
+  } else {
+    throw new TypeError('Callback must be a function');
+  }
+};
+
+// Test
+const arr = [];
+arr.setPushCb((items) => {
+  console.log('Items pushed:', items);
+});
+arr.push(1);
+arr.push(2, 3);
+```
+---  
+
+## 🚀Write custom function for JSON.stringify
+##### In interview don't handle all data type in one shot, you can start with string number object array then go for handling circular depedency handle null properly, beacause typeof null === object
+
+```js
+function myStringify(value, seen = new WeakMap()) {
+  if (value === null || value === undefined || typeof value === "symbol") {
+    return "null";
+  }
+
+  if (typeof value === "string") {
+    return `"${value.replace(/"/g, '\\"')}"`; // Escape quotes
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (typeof value === "function") {
+    return undefined; // Skip like JSON.stringify
+  }
+
+  if (Array.isArray(value)) {
+    const result = value.map(item => {
+      const str = myStringify(item, seen);
+      return str === undefined ? "null" : str;
+    });
+    return `[${result.join(",")}]`;
+  }
+
+  if (typeof value === "object") {
+    if (seen.has(value)) {
+      return `"${seen.get(value)}"`; // Replace with reference path or "[Circular]"
+    }
+
+    // Tag this object as seen
+    seen.set(value, "[Circular]");
+
+    const entries = Object.entries(value)
+      .filter(([_, val]) => typeof val !== "function" && val !== undefined)
+      .map(([key, val]) => {
+        const str = myStringify(val, seen);
+        return str !== undefined ? `"${key}":${str}` : null;
+      })
+      .filter(Boolean);
+
+    return `{${entries.join(",")}}`;
+  }
+
+  throw new Error(`Unsupported data type: ${typeof value}`);
+}
+
+const obj = {
+  name: "Alice",
+  age: 30,
+  hobbies: ["reading", null, undefined, () => {}],
+  meta: {
+    created: null,
+    update: undefined,
+  },
+  greet: function () {},
+};
+
+// Add circular reference
+obj.circular = obj;
+
+console.log("Custom JSON with Circular Support:");
+console.log(myStringify(obj));
+
+// Native throws an error
+try {
+  console.log(JSON.stringify(obj));
+} catch (e) {
+  console.log("Native JSON.stringify Error:", e.message);
+}
+```
+## Output
+```js
+Custom JSON with Circular Support:
+{"name":"Alice","age":30,"hobbies":["reading",null,null,null],"meta":{"created":null},"circular":"[Circular]"}
+
+Native JSON.stringify Error: Converting circular structure to JSON
+```
+---  
 
 
